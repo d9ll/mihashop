@@ -1,0 +1,6 @@
+{
+  "name": "Mihashop",
+  "description": "Приложение для открытия и навигации по сайту mihashop.great-site.net с поддержкой жеста свайпа для обновления и кнопками управления.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
