@@ -14,6 +14,13 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Check files structure
+      run: |
+        echo "=== Текущие файлы в корне ==="
+        ls -la
+        echo "=== Поиск gradlew ==="
+        find . -name "gradlew"
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -22,21 +29,36 @@ jobs:
         cache: gradle
 
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      run: |
+        if [ -f ./gradlew ]; then
+          chmod +x ./gradlew
+        else
+          echo "Файл gradlew не найден в корне! Ищу в подпапках..."
+          find . -name "gradlew" -exec chmod +x {} \;
+        fi
 
     - name: Build Release APK
-      run: ./gradlew assembleRelease
-
-    - name: Rename APK for release
       run: |
-        mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/mihashop.apk || true
+        if [ -f ./gradlew ]; then
+          ./gradlew assembleRelease
+        else
+          # Если проект почему-то оказался в подпапке
+          GRADLE_DIR=$(find . -name "gradlew" -printf '%h\n' | head -n 1)
+          if [ -n "$GRADLE_DIR" ]; then
+            cd "$GRADLE_DIR"
+            ./gradlew assembleRelease
+          else
+            echo "Критическая ошибка: gradlew вообще отсутствует в репозитории!"
+            exit 1
+          fi
+        fi
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          app/build/outputs/apk/release/mihashop.apk
-          app/build/outputs/apk/release/app-release-unsigned.apk
+          **/build/outputs/apk/release/*-unsigned.apk
+          **/build/outputs/apk/release/*.apk
         name: Release ${{ github.ref_name }}
         tag_name: ${{ github.ref }}
         draft: false
