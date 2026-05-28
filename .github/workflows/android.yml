@@ -21,18 +21,31 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Find and Grant execute permission for gradlew
+    - name: Find, Repair and Grant execute permission for gradlew
       run: |
-        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+        # Ищем файл gradlew по всему репозиторию, игнорируя регистр
+        GRADLEW_PATH=$(find . -iname "gradlew" | head -n 1)
+        
         if [ -z "$GRADLEW_PATH" ]; then
-          echo "Критическая ошибка: файл gradlew вообще не найден в репозитории!"
+          echo "Критическая ошибка: файл gradlew вообще не найден в проекте!"
           exit 1
         fi
-        echo "Файл gradlew найден по пути: $GRADLEW_PATH"
         
+        echo "Файл gradlew успешно найден по пути: $GRADLEW_PATH"
+        
+        # Запоминаем папку, где лежит gradlew
+        GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
+        echo "GRADLEW_DIR=$GRADLEW_DIR" >> $GITHUB_ENV
+        
+        # Принудительно удаляем виндовые концы строк (\r) из самого файла gradlew
         sed -i 's/\r$//' "$GRADLEW_PATH"
+        
+        # Также чистим первую строку (shebang), если там затесался \r
+        sed -i '1s/\r$//' "$GRADLEW_PATH"
+        
+        # Даем права на выполнение
         chmod +x "$GRADLEW_PATH"
-        echo "GRADLEW_DIR=$(dirname "$GRADLEW_PATH")" >> $GITHUB_ENV
+        echo "Права доступа успешно выданы!"
 
     - name: Build Release APK
       run: |
