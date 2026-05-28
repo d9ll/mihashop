@@ -3,8 +3,8 @@ name: Build & Release Android APK
 on:
   push:
     tags:
-      - 'v*' # Сработает автоматически, когда создашь релизный тег (например, v1.0)
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,8 +29,9 @@ jobs:
           exit 1
         fi
         echo "Файл gradlew найден по пути: $GRADLEW_PATH"
+        
+        sed -i 's/\r$//' "$GRADLEW_PATH"
         chmod +x "$GRADLEW_PATH"
-        # Сохраняем путь для следующих шагов
         echo "GRADLEW_DIR=$(dirname "$GRADLEW_PATH")" >> $GITHUB_ENV
 
     - name: Build Release APK
