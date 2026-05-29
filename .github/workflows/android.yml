@@ -6,6 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Выдаем права роботу, чтобы он мог загружать файлы в релизы
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,9 +31,7 @@ jobs:
 
     - name: Generate Dummy Debug Keystore
       run: |
-        # Генерируем тестовый debug.keystore, который так сильно просит твой плагин
         keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-        echo "Фейковый дебаг-ключ успешно создан в корне!"
 
     - name: Build APK
       run: |
