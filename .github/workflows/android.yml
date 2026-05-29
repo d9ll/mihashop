@@ -19,42 +19,17 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Force Regenerate Gradle Wrapper
-      run: |
-        # Находим корень нашего андроид-проекта (где лежит build.gradle.kts)
-        BUILD_GRADLE_PATH=$(find . -name "build.gradle.kts" | head -n 1)
-        if [ -z "$BUILD_GRADLE_PATH" ]; then
-          BUILD_GRADLE_PATH=$(find . -name "build.gradle" | head -n 1)
-        fi
-        
-        if [ -z "$BUILD_GRADLE_PATH" ]; then
-          echo "Критическая ошибка: файл build.gradle не найден в репозитории!"
-          exit 1
-        fi
-        
-        PROJECT_DIR=$(dirname "$BUILD_GRADLE_PATH")
-        echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-        cd "$PROJECT_DIR"
-        
-        echo "Проект найден в папке: $PROJECT_DIR"
-        
-        # Принудительно генерируем официальный чистый Gradle Wrapper через встроенный инструмент gradle
-        # Используем стабильную версию 8.2, чтобы точно всё скомпилировалось
-        gradle wrapper --gradle-version 8.2 --distribution-type bin
-        
-        # Лечим права и виндовые переносы строк на всякий случай
-        sed -i 's/\r$//' gradlew
-        sed -i '1s/\r$//' gradlew
-        chmod +x gradlew
-        
-        echo "Регенерация Gradle Wrapper успешно завершена!"
+    # Официальный экшен автоматической настройки Gradle (сам всё поймет и поднимет)
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 8.4
 
     - name: Build Release APK
       run: |
-        cd ${{ env.PROJECT_DIR }}
-        ./gradlew assembleRelease
+        # Запускаем сборку через глобальный gradle, который поставил экшен выше
+        gradle assembleRelease --no-daemon
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
