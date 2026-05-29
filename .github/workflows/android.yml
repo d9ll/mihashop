@@ -25,14 +25,18 @@ jobs:
       with:
         gradle-version: 9.3.1
 
+    - name: Generate Dummy Debug Keystore
+      run: |
+        # Генерируем тестовый debug.keystore, который так сильно просит твой плагин
+        keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+        echo "Фейковый дебаг-ключ успешно создан в корне!"
+
     - name: Build APK
       run: |
-        # Собираем дебаг-версию, которая не требует внешних .jks ключей и собирается всегда
         gradle assembleDebug
 
     - name: Rename APK for Release
       run: |
-        # Находим собранный APK и переименовываем его красиво для релиза
         APK_PATH=$(find . -name "*.apk" | head -n 1)
         echo "Найден APK по пути: $APK_PATH"
         mkdir -p release_artifacts
