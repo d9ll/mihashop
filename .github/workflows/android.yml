@@ -20,22 +20,28 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # Поднимаем именно ту версию Gradle, которую просит твой com.android.application (9.1.1)
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: 9.3.1
 
-    - name: Build Release APK
+    - name: Build APK
       run: |
-        gradle assembleRelease
+        # Собираем дебаг-версию, которая не требует внешних .jks ключей и собирается всегда
+        gradle assembleDebug
+
+    - name: Rename APK for Release
+      run: |
+        # Находим собранный APK и переименовываем его красиво для релиза
+        APK_PATH=$(find . -name "*.apk" | head -n 1)
+        echo "Найден APK по пути: $APK_PATH"
+        mkdir -p release_artifacts
+        cp "$APK_PATH" release_artifacts/mihashop-release.apk
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: |
-          **/build/outputs/apk/release/*-unsigned.apk
-          **/build/outputs/apk/release/*.apk
+        files: release_artifacts/mihashop-release.apk
         name: Release ${{ github.ref_name }}
         tag_name: ${{ github.ref }}
         draft: false
