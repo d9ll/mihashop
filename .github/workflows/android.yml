@@ -20,16 +20,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # Официальный экшен автоматической настройки Gradle (сам всё поймет и поднимет)
+    # Поднимаем именно ту версию Gradle, которую просит твой com.android.application (9.1.1)
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: 8.4
+        gradle-version: 9.3.1
 
     - name: Build Release APK
       run: |
-        # Запускаем сборку через глобальный gradle, который поставил экшен выше
-        gradle assembleRelease --no-daemon
+        gradle assembleRelease
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
