@@ -21,40 +21,39 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Fix and Force Download Gradle Wrapper
+    - name: Force Regenerate Gradle Wrapper
       run: |
-        # Находим gradlew в корне
-        GRADLEW_PATH=$(find . -iname "gradlew" | head -n 1)
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "Критическая ошибка: файл gradlew не найден!"
+        # Находим корень нашего андроид-проекта (где лежит build.gradle.kts)
+        BUILD_GRADLE_PATH=$(find . -name "build.gradle.kts" | head -n 1)
+        if [ -z "$BUILD_GRADLE_PATH" ]; then
+          BUILD_GRADLE_PATH=$(find . -name "build.gradle" | head -n 1)
+        fi
+        
+        if [ -z "$BUILD_GRADLE_PATH" ]; then
+          echo "Критическая ошибка: файл build.gradle не найден в репозитории!"
           exit 1
         fi
         
-        GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
-        echo "GRADLEW_DIR=$GRADLEW_DIR" >> $GITHUB_ENV
+        PROJECT_DIR=$(dirname "$BUILD_GRADLE_PATH")
+        echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+        cd "$PROJECT_DIR"
         
-        # Исправляем виндовые переносы строк
-        sed -i 's/\r$//' "$GRADLEW_PATH"
-        sed -i '1s/\r$//' "$GRADLEW_PATH"
-        chmod +x "$GRADLEW_PATH"
+        echo "Проект найден в папке: $PROJECT_DIR"
         
-        # Принудительно создаем структуру gradle/wrapper
-        mkdir -p "$GRADLEW_DIR/gradle/wrapper"
+        # Принудительно генерируем официальный чистый Gradle Wrapper через встроенный инструмент gradle
+        # Используем стабильную версию 8.2, чтобы точно всё скомпилировалось
+        gradle wrapper --gradle-version 8.2 --distribution-type bin
         
-        # Скачиваем стабильный чистый gradle-wrapper.jar с официального репозитория Gradle
-        echo "Скачиваем gradle-wrapper.jar..."
-        curl -Lo "$GRADLEW_DIR/gradle/wrapper/gradle-wrapper.jar" https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+        # Лечим права и виндовые переносы строк на всякий случай
+        sed -i 's/\r$//' gradlew
+        sed -i '1s/\r$//' gradlew
+        chmod +x gradlew
         
-        if [ -f "$GRADLEW_DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
-          echo "Файл успешно скачан и добавлен!"
-        else
-          echo "Не удалось скачать jar файл!"
-          exit 1
-        fi
+        echo "Регенерация Gradle Wrapper успешно завершена!"
 
     - name: Build Release APK
       run: |
-        cd ${{ env.GRADLEW_DIR }}
+        cd ${{ env.PROJECT_DIR }}
         ./gradlew assembleRelease
 
     - name: Create GitHub Release
