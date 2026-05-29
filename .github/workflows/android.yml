@@ -21,9 +21,9 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Find, Repair and Fix Gradle Wrapper
+    - name: Fix and Force Download Gradle Wrapper
       run: |
-        # Находим, где лежит gradlew
+        # Находим gradlew в корне
         GRADLEW_PATH=$(find . -iname "gradlew" | head -n 1)
         if [ -z "$GRADLEW_PATH" ]; then
           echo "Критическая ошибка: файл gradlew не найден!"
@@ -33,19 +33,23 @@ jobs:
         GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
         echo "GRADLEW_DIR=$GRADLEW_DIR" >> $GITHUB_ENV
         
-        # Лечим концы строк винды
+        # Исправляем виндовые переносы строк
         sed -i 's/\r$//' "$GRADLEW_PATH"
         sed -i '1s/\r$//' "$GRADLEW_PATH"
         chmod +x "$GRADLEW_PATH"
         
-        # Проверяем и фиксим gradle-wrapper.jar
-        WRAPPER_DIR="$GRADLEW_DIR/gradle/wrapper"
-        mkdir -p "$WRAPPER_DIR"
+        # Принудительно создаем структуру gradle/wrapper
+        mkdir -p "$GRADLEW_DIR/gradle/wrapper"
         
-        if [ ! -f "$WRAPPER_DIR/gradle-wrapper.jar" ]; then
-          echo "Файл gradle-wrapper.jar потерялся. Скачиваем напрямую от Gradle..."
-          # Скачиваем стабильную версию jar-враппера
-          curl -Lo "$WRAPPER_DIR/gradle-wrapper.jar" https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+        # Скачиваем стабильный чистый gradle-wrapper.jar с официального репозитория Gradle
+        echo "Скачиваем gradle-wrapper.jar..."
+        curl -Lo "$GRADLEW_DIR/gradle/wrapper/gradle-wrapper.jar" https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+        
+        if [ -f "$GRADLEW_DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+          echo "Файл успешно скачан и добавлен!"
+        else
+          echo "Не удалось скачать jar файл!"
+          exit 1
         fi
 
     - name: Build Release APK
